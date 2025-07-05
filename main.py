@@ -27,8 +27,11 @@ def send_message():
                   }
                }
             )
-   except:
+  
+   except Exception as e:
+      return { "system": "message sent is failure", "err": e }
       print('Message send is failed !')
+  
    finally:
       psql.release_conn(conn)
 
@@ -47,8 +50,9 @@ def show_messages():
          for msg in fetched_messages:
             response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
          return json.dumps({"data": response, "meta": {"code": 200}})
-   except:
-      print('Messages Not Recived!')
+  
+   except Exception as e:
+      return { "system": "messages not recived", "err": e }
    finally:
       psql.release_conn(conn)
 
@@ -63,9 +67,9 @@ def delete_message():
          msg_deleted = False
 
          find_sender = cur.execute("SELECT sender FROM messages WHERE id = (%s)", (msg_id,))
-         fetched_sender = cur.fetchone()
-         if fetched_sender is not None:
-            sender_name = fetched_sender[0]
+         fetch_sender_info = cur.fetchone()
+         if fetch_sender_info is not None:
+            sender_name = fetch_sender_info[0]
          else:
             return { "system": "user not found" }
 
@@ -79,8 +83,10 @@ def delete_message():
          else:
             print(msg_deleted)
             return { "system": f"message #{msg_id} Not exists or already deleted" }
-   except:
-      return { "system": "unexpected error | message not found" }
+  
+   except Exception as e:
+      return { "system": "message not found", "err": e }
+  
    finally:
       psql.release_conn(conn)
 
