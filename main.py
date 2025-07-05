@@ -1,15 +1,41 @@
-from psql_connection.db_conn import psql_connect
-from aiohttp import web
+from psql_connection.db_conn import psql
 from flask import Flask, request, json
 import requests
 import os
 
 app = Flask(__name__)
 
+@app.route('/sendmessage', methods=['POST'])
+def send_message():
+   conn = psql.get_conn()
+
+   try:
+      with conn.cursor() as cur:
+         cur.execute('INSERT INTO messages (message, sender) VALUES (%s, %s)', ('Where are you ?', 'Lwis'))
+         conn.commit()
+         print('Message Sent!')
+         return json.dumps(
+               {
+                  "data" : {
+                     "sender": request.form['sender_name'], "message": request.form['msg_text']
+                  },
+
+                  "meta": {
+                     "code": 200,
+                     "operation": "send"
+                  }
+
+               }
+            )
+   except:
+      print('Message send is failed !')
+   finally:
+      psql.release_conn(conn)
+
 
 @app.route('/messages', methods=['POST'])
-def create_message():
-   conn = psql_connect.get_conn()
+def show_messages():
+   conn = psql.get_conn()
 
    try:
       with conn.cursor() as cur:
@@ -21,9 +47,9 @@ def create_message():
             response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
          return json.dumps({"data": response, "meta": {"code": 200}})
    except:
-      print('Message Not Sent!')
+      print('Messages Not Recived!')
    finally:
-      psql_connect.release_conn(conn)
+      psql.release_conn(conn)
 
 
 if __name__ == '__main__':
@@ -32,4 +58,4 @@ if __name__ == '__main__':
    except:
       print("[X] Unexpected error check later")
    finally:
-      psql_connect.db_close_conn()
+      psql.db_close_conn()

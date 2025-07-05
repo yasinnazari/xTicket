@@ -23,7 +23,7 @@ except:
    print('-'*30)
 
 
-class psql_connect:
+class psql:
    def init(self):
       pass
 
