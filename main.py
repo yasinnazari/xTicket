@@ -39,6 +39,25 @@ def db_close_conn():
    db_pool_conn.closeall()
    print('🔴 ✧ Connection Disconnected')
 
+@app.route('/messages', methods=['POST'])
+def show_messages():
+   conn = get_conn()
+
+   try:
+      with conn.cursor() as cur:
+         response = []
+         cur.execute('SELECT * FROM messages')
+         fetched_messages = cur.fetchall()
+
+         for msg in fetched_messages:
+            response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
+         return json.dumps({"data": response, "meta": {"code": 200}})
+   except:
+      print('Message Not Sent!')
+   finally:
+      release_conn(conn)
+
+
 if __name__ == '__main__':
    try:
       app.run(debug=True, port=8000)
