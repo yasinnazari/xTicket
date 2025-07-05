@@ -15,7 +15,7 @@ db_config = {
 
 try:
    # Create connection pool and give connection 
-   db_pool_conn = pool.SimpleConnectionPool(4, 10, **db_config)
+   db_pool_conn = pool.SimpleConnectionPool(7, 20, **db_config)
    print('🟢 ✧ Connection was successfuly')
 except:
    print('-'*30)
