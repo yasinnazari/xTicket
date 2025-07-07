@@ -1,25 +1,28 @@
 from psql_connection.db_conn import psql
+from psycopg2.errors import NotNullViolation
 from flask import Flask, request, json
+import atexit
 import requests
 import os
 
 app = Flask(__name__)
+atexit.register(psql.db_close_conn)
 
 @app.route('/sendmessage', methods=['POST'])
 def send_message():
    conn = psql.get_conn()
-   msg_text = request.form['msg_text']
-   sender_name = request.form['sender_name']
+   msg_data = request.form
 
    try:
       with conn.cursor() as cur:
-         cur.execute('INSERT INTO messages (message, sender) VALUES (%s, %s)', (msg_text, sender_name))
+         cur.execute('INSERT INTO messages (message, sender) VALUES (%s, %s)', (msg_data.get('msg_text'), msg_data.get('sender_name')))
          conn.commit()
+
          print('Message Sent!')
          return json.dumps({
                   "data" : {
-                     "sender": sender_name,
-                     "message": msg_text,
+                     "sender": msg_data.get('sender_name'),
+                     "message": msg_data.get('msg_text'),
                   },
                   "meta": {
                      "code": 200,
@@ -27,11 +30,10 @@ def send_message():
                   }
                }
             )
-  
+
    except Exception as e:
       return { "system": "message sent is failure", "err": e }
-      print('Message send is failed !')
-  
+
    finally:
       psql.release_conn(conn)
 
@@ -60,39 +62,41 @@ def show_messages():
 @app.route('/deletemessage', methods=['DELETE'])
 def delete_message():
    conn = psql.get_conn()
-   msg_id = request.form['msg_id']
+   msg_data = request.form
 
    try:
       with conn.cursor() as cur:
          msg_deleted = False
 
-         find_sender = cur.execute("SELECT sender FROM messages WHERE id = (%s)", (msg_id,))
+         find_sender = cur.execute("SELECT sender FROM messages WHERE id = (%s)", (msg_data.get('msg_id'),))
          fetch_sender_info = cur.fetchone()
-         if fetch_sender_info is not None:
+
+         if fetch_sender_info != None:
             sender_name = fetch_sender_info[0]
          else:
-            return { "system": "user not found" }
+            return { "data": { "system": f"message #{msg_data.get('msg_id')} not exists or already deleted" } }
 
-         for _ in range(0, 1, 1):
-            cur.execute('DELETE FROM messages WHERE id = (%s)', (msg_id,))
-            conn.commit()
-            msg_deleted = True
+         cur.execute('DELETE FROM messages WHERE id = (%s)', (msg_data.get('msg_id'),))
+         conn.commit()
+         msg_deleted = True
 
          if msg_deleted:
-            return { "system": f"message #{msg_id} from {sender_name} successfuly removed" }
-         else:
-            print(msg_deleted)
-            return { "system": f"message #{msg_id} Not exists or already deleted" }
-  
+            return { 
+               "data": {
+                  "system": f"message #{msg_data.get('msg_id')} from {sender_name} successfuly removed" 
+               },
+               "meta": {
+                     "code": 200,
+                     "operation": "delete"
+               }
+            }
+
    except Exception as e:
-      return { "system": "message not found", "err": e }
+      return { "system": "message not found for delete", "err": e }
   
    finally:
       psql.release_conn(conn)
 
 
 if __name__ == '__main__':
-   try:
-      app.run(debug=True, port=8000)
-   finally:
-      psql.db_close_conn()
+   app.run(debug=True, port=8000)
