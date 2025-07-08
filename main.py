@@ -19,7 +19,7 @@ def send_message():
       message = validate_send_msg(**message_data) # validate send message request body data 
 
       with conn.cursor() as cur:
-         cur.execute('INSERT INTO messages (message, sender) VALUES (%s, %s)', (message.message_text, message.sender_username))
+         cur.execute('INSERT INTO tickets (message, sender) VALUES (%s, %s)', (message.message_text, message.sender_username))
          conn.commit()
 
          print('Message Sent!')
@@ -55,24 +55,26 @@ def send_message():
 
 
 # Show all messages in database
-@app.route('/messages', methods=['POST'])
+@app.route('/showmessages', methods=['POST'])
 def show_messages():
    conn = db.get_conn()
 
    try:
       with conn.cursor() as cur:
          response = []
-         cur.execute('SELECT * FROM messages')
+         cur.execute('SELECT * FROM tickets')
          fetched_messages = cur.fetchall()
 
          for msg in fetched_messages:
             response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
          return jsonify({"data": response, "meta": {"code": 200}})
 
-   except Exception as e:
-      return { 
-         "system": "messages not recived", "err": e 
-      }
+   except:
+      return jsonify({
+            "code": 400,
+            "status": "error",
+            "error_message": "failed to load tickets"
+         }), 400
    finally:
       db.release_conn(conn)
 
@@ -86,11 +88,11 @@ def delete_message():
       message = validate_del_msg(**message_data) #validate delete message request body data
 
       with conn.cursor() as cur:
-         cur.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE id = (%s))", (message.id, ))
+         cur.execute("SELECT EXISTS(SELECT 1 FROM tickets WHERE id = (%s))", (message.id, ))
          check_id = cur.fetchone()
 
          if check_id[0] == True:
-            cur.execute('DELETE FROM messages WHERE id = (%s)', (message.id,))
+            cur.execute('DELETE FROM tickets WHERE id = (%s)', (message.id,))
             conn.commit()
             return {
                "data": {
