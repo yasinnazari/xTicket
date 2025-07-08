@@ -1,5 +1,5 @@
 from src.database.db_conn import psql as db # use db for use this module methods
-from src.validation.validation import data_validation as validate # use validate for use this module methods
+from src.validation.validation import validate_send_msg, validate_del_msg # use validate for use this module methods
 from flask import Flask, request, jsonify, json
 from pydantic import ValidationError
 import atexit
@@ -16,7 +16,7 @@ def send_message():
 
    try:
       message_data = request.get_json()
-      message = validate(**message_data) # validate request body data 
+      message = validate_send_msg(**message_data) # validate send message request body data 
 
       with conn.cursor() as cur:
          cur.execute('INSERT INTO messages (message, sender) VALUES (%s, %s)', (message.message_text, message.sender_username))
@@ -77,47 +77,57 @@ def show_messages():
       db.release_conn(conn)
 
 
-# -----------------------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------------
+# delete message with id
+@app.route('/deletemessage', methods=['DELETE'])
+def delete_message():
+   try:
+      conn = db.get_conn()
+      message_data = request.get_json()
+      message = validate_del_msg(**message_data) #validate delete message request body data
 
+      with conn.cursor() as cur:
+         cur.execute("SELECT EXISTS(SELECT 1 FROM messages WHERE id = (%s))", (message.id, ))
+         check_id = cur.fetchone()
 
-# @app.route('/deletemessage', methods=['DELETE'])
-# def delete_message():
-#    conn = psql.get_conn()
-#    msg_data = request.form
+         if check_id[0] == True:
+            cur.execute('DELETE FROM messages WHERE id = (%s)', (message.id,))
+            conn.commit()
+            return {
+               "data": {
+                  "message_id" : message.id
+               },
 
-#    try:
-#       with conn.cursor() as cur:
-#          msg_deleted = False
+               "meta": {
+                  "code": 200,
+                  "operation": "delete"
+               }
+            }
 
-#          find_sender = cur.execute("SELECT sender FROM messages WHERE id = (%s)", (msg_data.get('msg_id'),))
-#          fetch_sender_info = cur.fetchone()
+         else:
+            return jsonify({
+               "code": 400,
+               "status": "error",
+               "error_message": "this id does not exist"
+            }), 400
 
-#          if fetch_sender_info != None:
-#             sender_name = fetch_sender_info[0]
-#          else:
-#             return { "data": { "system": f"message #{msg_data.get('msg_id')} not exists or already deleted" } }
+   except ValidationError as err:
+      error_list = [
+         {
+            'field': e['loc'][0],
+            'reason': e['msg']
+         }
+         for e in err.errors()
+      ]
 
-#          cur.execute('DELETE FROM messages WHERE id = (%s)', (msg_data.get('msg_id'),))
-#          conn.commit()
-#          msg_deleted = True
+      return jsonify({
+         'code': 422,
+         'errors': error_list,
+         'message': 'validation failed',
+         'status': 'error',
+      }), 422
 
-#          if msg_deleted:
-#             return { 
-#                "data": {
-#                   "system": f"message #{msg_data.get('msg_id')} from {sender_name} successfuly removed" 
-#                },
-#                "meta": {
-#                      "code": 200,
-#                      "operation": "delete"
-#                }
-#             }
-
-#    except Exception as e:
-#       return { "system": "message not found for delete", "err": e }
-
-#    finally:
-#       psql.release_conn(conn)
+   finally:
+      db.release_conn(conn)
 
 
 if __name__ == '__main__':
