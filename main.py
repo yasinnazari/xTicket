@@ -96,6 +96,7 @@ def delete_message():
             conn.commit()
             return {
                "data": {
+                  "system": f"message #{message.id} successfully deleted",
                   "message_id" : message.id
                },
 
