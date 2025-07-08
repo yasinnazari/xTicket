@@ -1,6 +1,6 @@
 from src.database.db_conn import psql as db # use db for use this module methods
 from src.validation.validation import data_validation as validate # use validate for use this module methods
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, json
 from pydantic import ValidationError
 import atexit
 import requests
@@ -53,50 +53,32 @@ def send_message():
    finally:
       db.release_conn(conn)
 
-   # try:
-   #    with conn.cursor() as cur:
-   #       return json.dumps({
-   #                "data" : {
-   #                   "sender": msg_data.get('sender_name'),
-   #                   "message": msg_data.get('msg_text'),
-   #                },
-   #                "meta": {
-   #                   "code": 200,
-   #                   "operation": "send"
-   #                }
-   #             }
-   #          )
 
-   # except Exception as e:
-   #    return { "system": "message sent is failure", "err": e }
+# Show all messages in database
+@app.route('/messages', methods=['POST'])
+def show_messages():
+   conn = db.get_conn()
 
-   # finally:
-   #    psql.release_conn(conn)
+   try:
+      with conn.cursor() as cur:
+         response = []
+         cur.execute('SELECT * FROM messages')
+         fetched_messages = cur.fetchall()
+
+         for msg in fetched_messages:
+            response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
+         return jsonify({"data": response, "meta": {"code": 200}})
+
+   except Exception as e:
+      return { 
+         "system": "messages not recived", "err": e 
+      }
+   finally:
+      db.release_conn(conn)
 
 
 # -----------------------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------
-
-
-# # Show all messages in database
-# @app.route('/messages', methods=['POST'])
-# def show_messages():
-#    conn = psql.get_conn()
-
-#    try:
-#       with conn.cursor() as cur:
-#          response = []
-#          cur.execute('SELECT * FROM messages')
-#          fetched_messages = cur.fetchall()
-
-#          for msg in fetched_messages:
-#             response.append({"id": msg[0], "name": msg[1], "username": msg[2]})
-#          return json.dumps({"data": response, "meta": {"code": 200}})
-
-#    except Exception as e:
-#       return { "system": "messages not recived", "err": e }
-#    finally:
-#       psql.release_conn(conn)
 
 
 # @app.route('/deletemessage', methods=['DELETE'])
