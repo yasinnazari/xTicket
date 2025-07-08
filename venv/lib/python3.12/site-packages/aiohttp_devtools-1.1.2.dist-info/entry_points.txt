@@ -1,0 +1,3 @@
+[console_scripts]
+adev = aiohttp_devtools.cli:cli
+aiohttp-devtools = aiohttp_devtools.cli:cli
