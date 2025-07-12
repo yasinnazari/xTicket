@@ -6,7 +6,6 @@ import os
 load_dotenv('.env')
 
 class psql:
-
    db_config = {
       'host' : os.getenv('PSQL_HOST'),
       'database' : os.getenv('PSQL_DBNAME'),

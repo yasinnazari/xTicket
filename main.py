@@ -7,32 +7,47 @@ import requests
 import os
 
 app = Flask(__name__)
-atexit.register(db.db_close_conn)
-
 
 @app.route('/sendmessage', methods=['POST'])
 def send_message():
-   conn = db.get_conn()
+   try:
+      conn = db.get_conn()
+   except:
+      return {
+         "system": "Failed to connect database"
+      }
 
    try:
       message_data = request.get_json()
       message = validate_send_msg(**message_data) # validate send message request body data 
 
       with conn.cursor() as cur:
-         cur.execute('INSERT INTO tickets (message, sender) VALUES (%s, %s)', (message.message_text, message.sender_username))
-         conn.commit()
+         cur.execute("SELECT EXISTS(SELECT 1 FROM tickets WHERE sender = (%s))", (message.sender_username,))
+         check_username = cur.fetchone()
 
-         print('Message Sent!')
-      return {
-         "data": {
-            "message_text": message.message_text,
-            "sender_username": message.sender_username
-         },
-         "meta": {
-            "code": "200",
-            "operation": "send"
-         }
-      }
+         if check_username[0] == False:
+            cur.execute('INSERT INTO tickets (message, sender) VALUES (%s, %s)', (message.message_text, message.sender_username))
+            conn.commit()
+            print('Message Sent!')
+
+            return {
+               "data": {
+                  "message_text": message.message_text,
+                  "sender_username": message.sender_username
+               },
+               "meta": {
+                  "code": "200",
+                  "operation": "send"
+               }
+            }
+         else:
+            return jsonify({
+               "meta": {
+                  'code': 422,
+                  'key': 'username already exist',
+                  'status': 'error',
+               }
+            }), 422
 
    except ValidationError as err:
       error_list = [
@@ -57,7 +72,12 @@ def send_message():
 # Show all messages in database
 @app.route('/showmessages', methods=['POST'])
 def show_messages():
-   conn = db.get_conn()
+   try:
+      conn = db.get_conn()
+   except:
+      return {
+         "system": "Failed to connect database"
+      }
 
    try:
       with conn.cursor() as cur:
@@ -71,10 +91,13 @@ def show_messages():
 
    except:
       return jsonify({
-            "code": 400,
-            "status": "error",
-            "error_message": "failed to load tickets"
+            "meta": {
+               "code": 400,
+               "status": "error",
+               "key": "failed to load tickets"
+            }
          }), 400
+
    finally:
       db.release_conn(conn)
 
@@ -84,6 +107,12 @@ def show_messages():
 def delete_message():
    try:
       conn = db.get_conn()
+   except:
+      return jsonify({
+         "system": "failed to connect database"
+      }), 500
+
+   try:
       message_data = request.get_json()
       message = validate_del_msg(**message_data) #validate delete message request body data
 
@@ -108,9 +137,11 @@ def delete_message():
 
          else:
             return jsonify({
-               "code": 400,
-               "status": "error",
-               "error_message": "this id does not exist"
+               "meta": {
+                  "code": 400,
+                  "status": "error",
+                  "key": "this id does not exist"
+               }
             }), 400
 
    except ValidationError as err:
@@ -133,5 +164,6 @@ def delete_message():
       db.release_conn(conn)
 
 
+atexit.register(db.db_close_conn)
 if __name__ == '__main__':
    app.run(debug=True, port=8000)
