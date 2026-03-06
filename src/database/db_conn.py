@@ -40,7 +40,7 @@ class psql:
       psql.db_pool_conn.putconn(c)
 
    @staticmethod
-   def db_close_conn(exception=None):
+   def close_conn(exception=None):
       psql.db_pool_conn.closeall()
       print('🔴 ✧ Connection Disconnected')
 

@@ -102,7 +102,7 @@ def show_messages():
       db.release_conn(conn)
 
 
-# delete message with id
+# Delete message with id
 @app.route('/deletemessage', methods=['DELETE'])
 def delete_message():
    try:
@@ -114,7 +114,7 @@ def delete_message():
 
    try:
       message_data = request.get_json()
-      message = validate_del_msg(**message_data) #validate delete message request body data
+      message = validate_del_msg(**message_data) # Validate delete message request body data
 
       with conn.cursor() as cur:
          cur.execute("SELECT EXISTS(SELECT 1 FROM tickets WHERE id = (%s))", (message.id, ))
@@ -165,5 +165,6 @@ def delete_message():
 
 
 atexit.register(db.db_close_conn)
+
 if __name__ == '__main__':
    app.run(debug=True, port=8000)

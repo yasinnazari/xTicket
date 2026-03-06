@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr, ValidationError, Field
-from typing import Optional
 
 class validate_send_msg(BaseModel):
    message_text: str = Field(min_length=20, max_length=399)

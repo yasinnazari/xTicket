@@ -3,3 +3,7 @@ test.py
 .env
 lib/*
 bin/*
+venv
+venv/*
+bin
+lib
