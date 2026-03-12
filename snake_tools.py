@@ -1,11 +1,6 @@
 from tkinter import *
 
-GAME_WIDTH = 700
-GAME_HEIGHT = 700
-SLOWNESS = 300
-BG_COLOR = "yellow"
 direction="down"
-
 
 def center_window(window):
    window_width = window.winfo_width()
@@ -19,21 +14,5 @@ def center_window(window):
    window.geometry(f"{window_width}x{window_height}+{w}+{h}")
 
 
-def screen_base_configs(window, score):
-   window.title('X SNAKE X')
-   window.resizable(False, False)
-
-   label = Label(window, text=f"SCORE: {score}", font=('Letha', 25))
-   label.pack()
-
-   canvas = Canvas(window, bg=BG_COLOR, width=GAME_WIDTH, height=GAME_HEIGHT)
-   canvas.pack()
-
-   label = Label(window, text=f" ", font=(5))
-   label.pack()
-
-   restart = Button(window, text="BOOM", fg="red", padx=5, pady=10, font=('bold'))
-   restart.pack()
-
-   label = Label(window, text=f" ", font=(5))
-   label.pack()
+def restart_game():
+   score = 0
