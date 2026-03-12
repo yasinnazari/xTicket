@@ -1,6 +1,5 @@
 from tkinter import *
 
-direction="down"
 
 def center_window(window):
    window_width = window.winfo_width()
@@ -12,7 +11,3 @@ def center_window(window):
    h = (screen_height // 2 - window_height // 2)
 
    window.geometry(f"{window_width}x{window_height}+{w}+{h}")
-
-
-def restart_game():
-   score = 0
