@@ -1,1 +1,1 @@
-- `Basic Ticket/Message System`
+- `Mini Projects using Python`
