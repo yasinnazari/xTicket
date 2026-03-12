@@ -2,11 +2,8 @@ from tkinter import *
 
 GAME_WIDTH = 700
 GAME_HEIGHT = 700
-SPACE_SIZE = 40
 SLOWNESS = 300
-SNAKE_COLOR = "black"
 BG_COLOR = "yellow"
-FOOD_COLOR = "red"
 direction="down"
 
 
@@ -23,7 +20,7 @@ def center_window(window):
 
 
 def screen_base_configs(window, score):
-   window.title('X SNAKE')
+   window.title('X SNAKE X')
    window.resizable(False, False)
 
    label = Label(window, text=f"SCORE: {score}", font=('Letha', 25))
